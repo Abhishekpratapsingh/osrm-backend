@@ -116,6 +116,7 @@ template <typename T> void write(io::FileWriter &writer, const util::vector_view
 
 template <typename T> inline unsigned char packBits(T &data, std::size_t index, std::size_t count)
 {
+    static_assert(std::is_same<typename T::value_type, bool>::value, "value_type is not bool");
     unsigned char value = 0;
     for (std::size_t bit = 0; bit < count; ++bit, ++index)
         value = (value << 1) | data[index];
@@ -125,6 +126,7 @@ template <typename T> inline unsigned char packBits(T &data, std::size_t index, 
 template <typename T>
 inline void unpackBits(T &data, std::size_t index, std::size_t count, unsigned char value)
 {
+    static_assert(std::is_same<typename T::value_type, bool>::value, "value_type is not bool");
     const unsigned char mask = 1 << (count - 1);
     for (std::size_t bit = 0; bit < count; value <<= 1, ++bit, ++index)
         data[index] = value & mask;
@@ -138,7 +140,8 @@ template <> inline void read<bool>(io::FileReader &reader, util::vector_view<boo
     {
         unpackBits(data, index, CHAR_BIT, reader.ReadOne<unsigned char>());
     }
-    unpackBits(data, count / CHAR_BIT, count % CHAR_BIT, reader.ReadOne<unsigned char>());
+    if (count % CHAR_BIT)
+        unpackBits(data, count / CHAR_BIT, count % CHAR_BIT, reader.ReadOne<unsigned char>());
 }
 
 template <> inline void write<bool>(io::FileWriter &writer, const util::vector_view<bool> &data)
@@ -149,7 +152,8 @@ template <> inline void write<bool>(io::FileWriter &writer, const util::vector_v
     {
         writer.WriteOne<unsigned char>(packBits(data, index, CHAR_BIT));
     }
-    writer.WriteOne<unsigned char>(packBits(data, count / CHAR_BIT, count % CHAR_BIT));
+    if (count % CHAR_BIT)
+        writer.WriteOne<unsigned char>(packBits(data, count / CHAR_BIT, count % CHAR_BIT));
 }
 
 template <> inline void read<bool>(io::FileReader &reader, std::vector<bool> &data)
@@ -160,7 +164,8 @@ template <> inline void read<bool>(io::FileReader &reader, std::vector<bool> &da
     {
         unpackBits(data, index, CHAR_BIT, reader.ReadOne<unsigned char>());
     }
-    unpackBits(data, count / CHAR_BIT, count % CHAR_BIT, reader.ReadOne<unsigned char>());
+    if (count % CHAR_BIT)
+        unpackBits(data, count / CHAR_BIT, count % CHAR_BIT, reader.ReadOne<unsigned char>());
 }
 
 template <> inline void write<bool>(io::FileWriter &writer, const std::vector<bool> &data)
@@ -171,7 +176,8 @@ template <> inline void write<bool>(io::FileWriter &writer, const std::vector<bo
     {
         writer.WriteOne<unsigned char>(packBits(data, index, CHAR_BIT));
     }
-    writer.WriteOne<unsigned char>(packBits(data, count / CHAR_BIT, count % CHAR_BIT));
+    if (count % CHAR_BIT)
+        writer.WriteOne<unsigned char>(packBits(data, count / CHAR_BIT, count % CHAR_BIT));
 }
 }
 }
